@@ -35,14 +35,38 @@ namespace CalculatorSample
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            string value_string = value.ToString();
+            throw new NotImplementedException();
+        }
+    }
 
-            if (!Enum.TryParse(value_string, out MainWindowVM.CalcModeEnum value_enum))
+    class DecimalToDisplayConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || !decimal.TryParse(value.ToString(), out decimal in_num))
             {
-                return DependencyProperty.UnsetValue;
+                return "";
             }
 
-            return value_enum;
+            string result = "";
+            decimal int_part = Math.Floor(in_num);
+            decimal dec_part = in_num - int_part;
+
+            if (in_num.ToString().Contains("."))
+            {
+                result = int_part.ToString("N0") + dec_part.ToString("0.".PadRight(29, '#')).Substring(1);
+            }
+            else
+            {
+                result = int_part.ToString("N0");
+            }
+
+            return result;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

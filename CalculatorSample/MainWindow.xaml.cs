@@ -20,12 +20,9 @@ namespace CalculatorSample
     /// </summary>
     public partial class MainWindow : Window
     {
-        private MainWindowVM _viewModel = new MainWindowVM();
-
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = _viewModel;
         }
     }
 }

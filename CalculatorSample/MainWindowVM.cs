@@ -8,6 +8,7 @@ namespace CalculatorSample
 {
     class MainWindowVM : BindableBase
     {
+        #region 列挙体
         public enum CalcModeEnum
         {
             None,
@@ -16,9 +17,13 @@ namespace CalculatorSample
             Times,
             Div,
         }
+        #endregion
 
+        #region プライベートフィールド
         private bool _isPostEqual = false;
+        #endregion
 
+        #region プロパティ
         private decimal? _leftOperand = null;
         public decimal? LeftOperand
         {
@@ -80,23 +85,29 @@ namespace CalculatorSample
                 }
             }
         }
+        #endregion
 
+        #region コマンド
         public DelegateCommand<string> InputNumCommand { get; private set; }
 
         public DelegateCommand<string> SetCalcModeCommand { get; private set; }
 
-        public DelegateCommand GetResultCommand { get; private set; }
+        public DelegateCommand RunCalcCommand { get; private set; }
 
         public DelegateCommand ClearCommand { get; private set; }
+        #endregion
 
+        #region コンストラクタ
         public MainWindowVM()
         {
             InputNumCommand = new DelegateCommand<string>(InputNum);
             SetCalcModeCommand = new DelegateCommand<string>(SetCalcMode);
-            GetResultCommand = new DelegateCommand(GetResult);
+            RunCalcCommand = new DelegateCommand(RunCalc);
             ClearCommand = new DelegateCommand(Clear);
         }
+        #endregion
 
+        #region プライベートメソッド
         private void InputNum(string in_str)
         {
             try
@@ -120,7 +131,7 @@ namespace CalculatorSample
 
                 if (decimal.TryParse(tmp_text, out decimal dec_num))
                 {
-                    DisplayText = dec_num.ToString("N0");
+                    DisplayText = GetNumForDisplay(dec_num);
                 }
                 else
                 {
@@ -221,50 +232,51 @@ namespace CalculatorSample
             }
         }
 
-        private void GetResult()
+        private void RunCalc()
         {
             try
             {
                 if (!decimal.TryParse(DisplayText, out _) && LeftOperand != null && RightOperand == null)
                 {
-                    DisplayText = LeftOperand.Value.ToString("N0");
+                    DisplayText = GetNumForDisplay(LeftOperand);
                     return;
                 }
 
                 if (decimal.TryParse(DisplayText, out decimal disp_dec) && LeftOperand != null)
                 {
                     RightOperand = disp_dec;
+                    decimal? result = null;
 
                     switch (CalcMode)
                     {
                         case CalcModeEnum.Add:
-                            DisplayText = (LeftOperand.Value + RightOperand.Value).ToString("N0");
-                            LeftOperand = (LeftOperand.Value + RightOperand.Value);
+                            result = (LeftOperand.Value + RightOperand.Value);
                             break;
                         case CalcModeEnum.Sub:
-                            DisplayText = (LeftOperand.Value - RightOperand.Value).ToString("N0");
-                            LeftOperand = (LeftOperand.Value - RightOperand.Value);
+                            result = (LeftOperand.Value - RightOperand.Value);
                             break;
                         case CalcModeEnum.Times:
-                            DisplayText = (LeftOperand.Value * RightOperand.Value).ToString("N0");
-                            LeftOperand = (LeftOperand.Value * RightOperand.Value);
+                            result = (LeftOperand.Value * RightOperand.Value);
                             break;
                         case CalcModeEnum.Div:
-                            DisplayText = (LeftOperand.Value / RightOperand.Value).ToString("N0");
-                            LeftOperand = (LeftOperand.Value / RightOperand.Value);
+                            result = (LeftOperand.Value / RightOperand.Value);
                             break;
                         default:
                             Clear();
-                            break;
+                            return;
                     }
 
+                    DisplayText = GetNumForDisplay(result);
                     CalcMode = CalcModeEnum.None;
+                    LeftOperand = result;
                     RightOperand = null;
-                    _isPostEqual = true;
-                    return;
-                }
 
-                Clear();
+                    _isPostEqual = true;
+                }
+                else
+                {
+                    Clear();
+                }
             }
             catch (Exception)
             {
@@ -292,5 +304,29 @@ namespace CalculatorSample
                 DisplayText = "Err";
             }
         }
+
+        private string GetNumForDisplay(decimal? in_num)
+        {
+            if (in_num == null)
+            {
+                return "";
+            }
+
+            string result = "";
+            decimal int_part = Math.Floor(in_num.Value);
+            decimal dec_part = in_num.Value - int_part;
+
+            if (in_num.Value.ToString().Contains("."))
+            {
+                result = int_part.ToString("N0") + dec_part.ToString("0.".PadRight(29, '#')).Substring(1);
+            }
+            else
+            {
+                result = int_part.ToString("N0");
+            }
+
+            return result;
+        }
+        #endregion
     }
 }
