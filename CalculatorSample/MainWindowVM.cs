@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CalculatorSample
@@ -17,6 +18,12 @@ namespace CalculatorSample
             Times,
             Div,
         }
+        #endregion
+
+        #region 定数
+        private readonly string ERR_TEXT = "Err";
+
+        private readonly string DOT_TEXT = ".";
         #endregion
 
         #region プライベートフィールド
@@ -119,28 +126,30 @@ namespace CalculatorSample
 
                 _isPostEqual = false;
 
-                string tmp_text = DisplayText;
-
-                if (in_str == ".")
+                if (in_str == DOT_TEXT && !DisplayText.Contains(DOT_TEXT))
                 {
-                    DisplayText = tmp_text + in_str;
+                    DisplayText = DisplayText + in_str;
+                    return;
+                }
+                else if (in_str == DOT_TEXT && DisplayText.Contains(DOT_TEXT))
+                {
                     return;
                 }
 
-                tmp_text = DisplayText + in_str;
+                DisplayText = DisplayText + in_str;
 
-                if (decimal.TryParse(tmp_text, out decimal dec_num))
+                if (decimal.TryParse(DisplayText, out decimal dec_num))
                 {
-                    DisplayText = GetNumForDisplay(dec_num);
+                    DisplayText = dec_num.ToString();
                 }
                 else
                 {
-                    DisplayText = "Err";
+                    DisplayText = ERR_TEXT;
                 }
             }
             catch (Exception)
             {
-                DisplayText = "Err";
+                DisplayText = ERR_TEXT;
             }
         }
 
@@ -150,7 +159,7 @@ namespace CalculatorSample
             {
                 if (string.IsNullOrWhiteSpace(DisplayText))
                 {
-                    if (LeftOperand == null || RightOperand != null)
+                    if (LeftOperand == null || (RightOperand != null && CalcMode == CalcModeEnum.None))
                     {
                         Clear();
                         return;
@@ -188,14 +197,26 @@ namespace CalculatorSample
                     Clear();
                     return;
                 }
-
-                if (LeftOperand == null && RightOperand == null)
+                else if (LeftOperand == null && RightOperand == null)
                 {
-                    LeftOperand = disp_dec;
+                    string result_str = disp_dec.ToString();
+
+                    if (Regex.IsMatch(result_str, @"\.0+$"))
+                    {
+                        LeftOperand = decimal.Parse(Regex.Replace(result_str, @"\.0+$", ""));
+                    }
+                    else if ((result_str?.Contains(".") ?? false) && Regex.IsMatch(result_str, @"0+$"))
+                    {
+                        LeftOperand = decimal.Parse(Regex.Replace(result_str, @"0+$", ""));
+                    }
+                    else
+                    {
+                        LeftOperand = disp_dec;
+                    }
+
                     DisplayText = "";
                 }
-
-                if (LeftOperand != null && RightOperand == null)
+                else if (LeftOperand != null && RightOperand == null)
                 {
                     RightOperand = disp_dec;
                 }
@@ -228,7 +249,7 @@ namespace CalculatorSample
             }
             catch (Exception)
             {
-                DisplayText = "Err";
+                DisplayText = ERR_TEXT;
             }
         }
 
@@ -238,7 +259,7 @@ namespace CalculatorSample
             {
                 if (!decimal.TryParse(DisplayText, out _) && LeftOperand != null && RightOperand == null)
                 {
-                    DisplayText = GetNumForDisplay(LeftOperand);
+                    DisplayText = LeftOperand?.ToString();
                     return;
                 }
 
@@ -266,9 +287,23 @@ namespace CalculatorSample
                             return;
                     }
 
-                    DisplayText = GetNumForDisplay(result);
+                    string result_str = result?.ToString();
+
+                    if (Regex.IsMatch(result_str, @"\.0+$"))
+                    {
+                        DisplayText = Regex.Replace(result_str, @"\.0+$", "");
+                    }
+                    else if ((result_str?.Contains(".") ?? false) && Regex.IsMatch(result_str, @"0+$"))
+                    {
+                        DisplayText = Regex.Replace(result_str, @"0+$", "");
+                    }
+                    else
+                    {
+                        DisplayText = result_str;
+                    }
+
                     CalcMode = CalcModeEnum.None;
-                    LeftOperand = result;
+                    LeftOperand = decimal.Parse(DisplayText);
                     RightOperand = null;
 
                     _isPostEqual = true;
@@ -280,7 +315,7 @@ namespace CalculatorSample
             }
             catch (Exception)
             {
-                DisplayText = "Err";
+                DisplayText = ERR_TEXT;
             }
         }
 
@@ -301,31 +336,8 @@ namespace CalculatorSample
             }
             catch (Exception)
             {
-                DisplayText = "Err";
+                DisplayText = ERR_TEXT;
             }
-        }
-
-        private string GetNumForDisplay(decimal? in_num)
-        {
-            if (in_num == null)
-            {
-                return "";
-            }
-
-            string result = "";
-            decimal int_part = Math.Floor(in_num.Value);
-            decimal dec_part = in_num.Value - int_part;
-
-            if (in_num.Value.ToString().Contains("."))
-            {
-                result = int_part.ToString("N0") + dec_part.ToString("0.".PadRight(29, '#')).Substring(1);
-            }
-            else
-            {
-                result = int_part.ToString("N0");
-            }
-
-            return result;
         }
         #endregion
     }

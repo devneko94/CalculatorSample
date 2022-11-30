@@ -84,7 +84,7 @@
 					 HorizontalContentAlignment="Right"
 					 FontSize="52"
 					 IsReadOnly="True"
-					 Text="{Binding DisplayText, Mode=OneWay}" />
+					 Text="{Binding DisplayText, Converter={StaticResource DecimalToDisplay}, Mode=OneWay}" />
 		</Grid>
 
 		<Grid Grid.Row="1"
